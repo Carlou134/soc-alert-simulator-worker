@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Dataset de alertas cargado en runtime via POST /api/v1/dataset/upload (no es codigo fuente)
+SplunkSocWorker/Data/*.json
+
+# Logs de Serilog (generados en runtime)
+SplunkSocWorker/Logs/
