@@ -39,16 +39,28 @@ public class AlertsDatasetPool
         await SaveToDiskAsync(records, ct);
     }
 
-    public List<AlertRecord> TakeRandomBatch(int size)
+    // Consume, no resamplea: cada alerta se devuelve como maximo una vez por dataset cargado.
+    // El resto queda persistido en disco, asi que un restart no "revive" alertas ya enviadas.
+    public async Task<List<AlertRecord>> TakeRandomBatchAsync(int size, CancellationToken ct = default)
     {
+        List<AlertRecord> taken;
+        List<AlertRecord> remaining;
+
         lock (_lock)
         {
             if (_records.Count == 0)
                 return [];
 
-            var effectiveSize = Math.Min(size, _records.Count);
-            return [.. _records.OrderBy(_ => _random.Next()).Take(effectiveSize)];
+            var shuffled = _records.OrderBy(_ => _random.Next()).ToList();
+            var effectiveSize = Math.Min(size, shuffled.Count);
+
+            taken = [.. shuffled.Take(effectiveSize)];
+            remaining = [.. shuffled.Skip(effectiveSize)];
+            _records = remaining;
         }
+
+        await SaveToDiskAsync(remaining, ct);
+        return taken;
     }
 
     private void LoadFromDisk()

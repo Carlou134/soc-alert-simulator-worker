@@ -43,12 +43,12 @@ public class BatchSenderWorker : BackgroundService
         {
             if (_pool.Count == 0)
             {
-                _logger.LogWarning("No hay dataset cargado, se omite el lote. Subilo via POST /api/v1/dataset/upload.");
+                _logger.LogWarning("No quedan alertas por enviar (dataset vacio o no cargado). Subi uno nuevo via POST /api/v1/dataset/upload.");
                 continue;
             }
 
             var batchSize = random.Next(minSize, maxSize + 1);
-            var batch = _pool.TakeRandomBatch(batchSize);
+            var batch = await _pool.TakeRandomBatchAsync(batchSize, stoppingToken);
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             var events = batch.Select(record => new HecEvent
