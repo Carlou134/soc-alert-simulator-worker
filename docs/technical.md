@@ -63,7 +63,7 @@ All configuration lives under `appsettings.json` / `appsettings.Development.json
 | `Hec:IgnoreSslErrors` | Bypasses certificate validation, for Splunk's self-signed local dev cert |
 | `Batch:Enabled` | **Defaults to `false`.** `BatchSenderWorker` starts with the host regardless, but sends nothing to Splunk unless this is `true` — starting/restarting the Worker (e.g. to test the upload endpoint) never fires alerts as a side effect. Set to `true` explicitly (or override per environment) when you actually want the simulation running. |
 | `Batch:IntervalMinutes` | How often `BatchSenderWorker` ticks, when enabled |
-| `Batch:MinSize` / `Batch:MaxSize` | Random batch size range sampled from the loaded dataset per tick |
+| `Batch:MinSize` / `Batch:MaxSize` | Random batch size range taken from the loaded dataset per tick. The pool is consumed, not resampled — each alert is sent at most once; once exhausted, ticks are skipped (logged) until a new dataset is uploaded |
 | `Dataset:StoragePath` | Where the uploaded dataset is cached on disk |
 
 `appsettings.Development.json` overrides `IgnoreSslErrors` to `true` (Splunk's local HEC certificate is self-signed) and `IntervalMinutes` to `5` (faster feedback loop for demos). `Batch:Enabled` defaults to `false` in both files on purpose — turn it on deliberately, per run, not as a standing default.
