@@ -24,6 +24,12 @@ public class BatchSenderWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_configuration.GetValue("Batch:Enabled", false))
+        {
+            _logger.LogInformation("Envio automatico a Splunk deshabilitado (Batch:Enabled=false). No se manda nada hasta que lo actives.");
+            return;
+        }
+
         var intervalMinutes = _configuration.GetValue("Batch:IntervalMinutes", 5);
         var minSize = _configuration.GetValue("Batch:MinSize", 20);
         var maxSize = _configuration.GetValue("Batch:MaxSize", 30);
