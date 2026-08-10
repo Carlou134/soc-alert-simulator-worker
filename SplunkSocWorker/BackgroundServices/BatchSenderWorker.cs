@@ -35,40 +35,44 @@ public class BatchSenderWorker : BackgroundService
         var maxSize = _configuration.GetValue("Batch:MaxSize", 30);
         var index = _configuration["Hec:Index"] ?? "soc_alerts";
         var sourcetype = _configuration["Hec:Sourcetype"] ?? "_json";
+        var interval = TimeSpan.FromMinutes(intervalMinutes);
 
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(intervalMinutes));
         var random = new Random();
 
-        do
+        while (!stoppingToken.IsCancellationRequested)
         {
             if (_pool.Count == 0)
             {
                 _logger.LogWarning("No quedan alertas por enviar (dataset vacio o no cargado). Se requiere cargar uno nuevo via POST /api/v1/dataset/upload.");
-                continue;
+            }
+            else
+            {
+                var batchSize = random.Next(minSize, maxSize + 1);
+                var batch = await _pool.TakeRandomBatchAsync(batchSize, stoppingToken);
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                var events = batch.Select(record => new HecEvent
+                {
+                    Time = now,
+                    Index = index,
+                    Sourcetype = sourcetype,
+                    Event = record
+                });
+
+                try
+                {
+                    await _hecClient.SendBulkAsync(events, stoppingToken);
+                    _logger.LogInformation("Lote de {Count} alertas enviado a Splunk.", batch.Count);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Fallo el envio del lote a Splunk HEC.");
+                }
             }
 
-            var batchSize = random.Next(minSize, maxSize + 1);
-            var batch = await _pool.TakeRandomBatchAsync(batchSize, stoppingToken);
-            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-            var events = batch.Select(record => new HecEvent
-            {
-                Time = now,
-                Index = index,
-                Sourcetype = sourcetype,
-                Event = record
-            });
-
-            try
-            {
-                await _hecClient.SendBulkAsync(events, stoppingToken);
-                _logger.LogInformation("Lote de {Count} alertas enviado a Splunk.", batch.Count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fallo el envio del lote a Splunk HEC.");
-            }
+            // Espera el intervalo normal, pero se despierta antes si llega un dataset nuevo
+            // via POST /api/v1/dataset/upload en vez de quedarse ciego hasta el proximo tick.
+            await _pool.WaitForChangeAsync(interval, stoppingToken);
         }
-        while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 }
