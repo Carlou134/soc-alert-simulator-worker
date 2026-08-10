@@ -43,7 +43,7 @@ public class BatchSenderWorker : BackgroundService
         {
             if (_pool.Count == 0)
             {
-                _logger.LogWarning("No quedan alertas por enviar (dataset vacio o no cargado). Subi uno nuevo via POST /api/v1/dataset/upload.");
+                _logger.LogWarning("No quedan alertas por enviar (dataset vacio o no cargado). Se requiere cargar uno nuevo via POST /api/v1/dataset/upload.");
                 continue;
             }
 
