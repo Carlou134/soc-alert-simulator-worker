@@ -5,6 +5,8 @@
 - .NET 8 SDK
 - A reachable Splunk Enterprise instance with the HTTP Event Collector (HEC) enabled (for the batch-sending path — the upload endpoint works without Splunk running)
 
+![console](/docs/screnshots/worker-console.png)
+
 ## Local setup
 
 ```bash
@@ -26,6 +28,7 @@ All configuration lives under `appsettings.json` / `appsettings.Development.json
     "IgnoreSslErrors": false
   },
   "Batch": {
+    "Enabled": false,
     "IntervalMinutes": 60,
     "MinSize": 15,
     "MaxSize": 30
@@ -42,11 +45,12 @@ All configuration lives under `appsettings.json` / `appsettings.Development.json
 | `Hec:Token` | HEC token, set via user-secrets — see below, never in a committed file |
 | `Hec:Index` / `Hec:Sourcetype` | Sent as `index` / `sourcetype` on every HEC event |
 | `Hec:IgnoreSslErrors` | Bypasses certificate validation, for Splunk's self-signed local dev cert |
-| `Batch:IntervalMinutes` | How often `BatchSenderWorker` ticks |
+| `Batch:Enabled` | **Defaults to `false`.** `BatchSenderWorker` starts with the host regardless, but sends nothing to Splunk unless this is `true` — starting/restarting the Worker (e.g. to test the upload endpoint) never fires alerts as a side effect. Set to `true` explicitly (or override per environment) when you actually want the simulation running. |
+| `Batch:IntervalMinutes` | How often `BatchSenderWorker` ticks, when enabled |
 | `Batch:MinSize` / `Batch:MaxSize` | Random batch size range sampled from the loaded dataset per tick |
 | `Dataset:StoragePath` | Where the uploaded dataset is cached on disk |
 
-`appsettings.Development.json` overrides `IgnoreSslErrors` to `true` (Splunk's local HEC certificate is self-signed) and `IntervalMinutes` to `5` (faster feedback loop for demos).
+`appsettings.Development.json` overrides `IgnoreSslErrors` to `true` (Splunk's local HEC certificate is self-signed) and `IntervalMinutes` to `5` (faster feedback loop for demos). `Batch:Enabled` defaults to `false` in both files on purpose — turn it on deliberately, per run, not as a standing default.
 
 ### Setting the HEC token
 
