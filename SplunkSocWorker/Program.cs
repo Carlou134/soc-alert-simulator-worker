@@ -18,6 +18,7 @@ try
     builder.Host.UseSerilog();
 
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+    builder.Services.AddProblemDetails();
 
     builder.Services.AddSingleton<AlertsDatasetPool>();
     builder.Services.AddHostedService<BatchSenderWorker>();
