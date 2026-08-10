@@ -2,6 +2,8 @@
 
 > A .NET 8 Worker Service that simulates a SOC alert feed and streams it into Splunk Enterprise via HEC.
 
+![Alerts ingested into Splunk](docs/screnshots/splunk-data.png)
+
 ---
 
 ## 🧩 Problem / Context

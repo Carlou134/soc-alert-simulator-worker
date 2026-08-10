@@ -7,6 +7,22 @@
 
 ![console](/docs/screnshots/worker-console.png)
 
+## Splunk-side setup
+
+The Worker assumes a running Splunk Enterprise instance. If you don't have one yet:
+
+- **Splunk Developer Program license** — register at [dev.splunk.com](https://dev.splunk.com/enterprise/dev_license/) and request a Developer license: full access to Enterprise features, development use only (not for production).
+- **60-day Enterprise Trial** — no registration required beyond a Splunk account; downgrades automatically to the free tier when it expires, no reinstall needed.
+
+Either option gets you a local Splunk Enterprise instance with Splunk Web on `http://localhost:8000` and HEC available on port `8088`. Once it's running, this is the one-time setup in Splunk Web, done before touching the Worker's own config:
+
+1. **Create the `soc_alerts` index** — `Settings > Indexes > New Index`, Index Name: `soc_alerts`, leave the rest as default.
+2. **Enable the HTTP Event Collector** — `Settings > Data Inputs > HTTP Event Collector > Global Settings`: set *All Tokens* to `Enabled`, confirm the HTTP Port Number is `8088`. Toggle *Enable SSL* depending on whether you want `https://` (then `Hec:IgnoreSslErrors=true` locally, self-signed cert) or plain `http://` (then update `Hec:BaseUrl` to match — see below).
+3. **Create a token** — `New Token`, Name: e.g. `NET_Worker_Token`, Source Type: `_json`, Allowed Indexes: `soc_alerts` (also set as the default index). Submit and copy the generated GUID.
+4. **Wire it into the Worker** — `Hec:BaseUrl` should point at that same host and port (`https://localhost:8088` if Splunk runs on the same machine), and the token goes into `user-secrets`, never into `appsettings*.json` — see [Setting the HEC token](#setting-the-hec-token) below.
+
+If `Hec:BaseUrl`/port don't match how HEC is actually configured, or the token's Allowed Indexes doesn't include `soc_alerts`, Splunk rejects the event and `HecClient` logs the exact reason Splunk gives (e.g. `{"text":"Invalid token","code":4}` or `{"text":"Incorrect index","code":7}`) — see [Logging](#logging).
+
 ## Local setup
 
 ```bash
