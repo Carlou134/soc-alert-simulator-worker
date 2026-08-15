@@ -9,6 +9,7 @@ public class AlertsDatasetPool
     private readonly ILogger<AlertsDatasetPool> _logger;
     private readonly object _lock = new();
     private readonly Random _random = new();
+    private readonly SemaphoreSlim _changedSignal = new(0, 1);
     private List<AlertRecord> _records = [];
 
     public AlertsDatasetPool(IConfiguration configuration, ILogger<AlertsDatasetPool> logger)
@@ -37,6 +38,19 @@ public class AlertsDatasetPool
         }
 
         await SaveToDiskAsync(records, ct);
+        SignalChanged();
+    }
+
+    // Deja que BatchSenderWorker reaccione al toque a un upload nuevo, en vez de esperar
+    // a que se cumpla el intervalo completo del timer. Devuelve true si hubo cambio,
+    // false si se agoto el timeout sin novedades (comportamiento normal del loop).
+    public Task<bool> WaitForChangeAsync(TimeSpan timeout, CancellationToken ct) =>
+        _changedSignal.WaitAsync(timeout, ct);
+
+    private void SignalChanged()
+    {
+        if (_changedSignal.CurrentCount == 0)
+            _changedSignal.Release();
     }
 
     // Consume, no resamplea: cada alerta se devuelve como maximo una vez por dataset cargado.

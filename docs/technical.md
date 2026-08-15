@@ -62,7 +62,7 @@ All configuration lives under `appsettings.json` / `appsettings.Development.json
 | `Hec:Index` / `Hec:Sourcetype` | Sent as `index` / `sourcetype` on every HEC event |
 | `Hec:IgnoreSslErrors` | Bypasses certificate validation, for Splunk's self-signed local dev cert |
 | `Batch:Enabled` | **Defaults to `false`.** `BatchSenderWorker` starts with the host regardless, but sends nothing to Splunk unless this is `true` — starting/restarting the Worker (e.g. to test the upload endpoint) never fires alerts as a side effect. Set to `true` explicitly (or override per environment) when you actually want the simulation running. |
-| `Batch:IntervalMinutes` | How often `BatchSenderWorker` ticks, when enabled |
+| `Batch:IntervalMinutes` | Max time between `BatchSenderWorker` checks, when enabled — a new upload wakes it up immediately instead of waiting out the full interval |
 | `Batch:MinSize` / `Batch:MaxSize` | Random batch size range taken from the loaded dataset per tick. The pool is consumed, not resampled — each alert is sent at most once; once exhausted, ticks are skipped (logged) until a new dataset is uploaded |
 | `Dataset:StoragePath` | Where the uploaded dataset is cached on disk |
 

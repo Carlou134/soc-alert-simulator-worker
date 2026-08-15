@@ -29,7 +29,7 @@ SplunkSocWorker/
 │   ├── AlertsDatasetPool.cs            # in-memory dataset + JSON file persistence
 │   ├── IHecClient.cs / HecClient.cs    # typed HttpClient, bulk NDJSON POST to Splunk HEC
 ├── BackgroundServices/
-│   └── BatchSenderWorker.cs            # BackgroundService, PeriodicTimer, samples + sends batches
+│   └── BatchSenderWorker.cs            # BackgroundService, takes + sends batches on a timer or on upload
 ├── Endpoints/
 │   └── DatasetEndpoints.cs             # Minimal API: POST /api/v1/dataset/upload
 ├── Middleware/
@@ -71,3 +71,7 @@ Splunk HEC supports both a single-event endpoint (`/services/collector/event`) a
 ### The pool is consumed, not resampled
 
 `AlertsDatasetPool.TakeRandomBatchAsync` removes the sampled records from the in-memory pool (and re-persists the shrunken remainder to disk) instead of sampling with replacement. Each alert in an uploaded dataset is sent to Splunk **at most once** — earlier versions resampled the same pool every tick, which meant the same alert could be sent again in a later batch and Splunk would show more accumulated events than rows in the source dataset (e.g. two ticks of 15 and 24 producing 39 indexed events from a 30-row upload). Once the pool is exhausted, `BatchSenderWorker` logs it and waits for a new upload — it does not loop back to the start.
+
+### Uploads wake the sender early instead of waiting for the next tick
+
+Earlier, `BatchSenderWorker` only checked the pool on a fixed `PeriodicTimer` cadence: uploading a dataset mid-run did nothing until the next scheduled tick (up to `Batch:IntervalMinutes` away), which made a fresh upload look like it silently did nothing unless the Worker happened to be restarted right after (which reloads the pool from disk and fires an immediate first check). `AlertsDatasetPool` now exposes `WaitForChangeAsync`, backed by a `SemaphoreSlim` that `ReplaceAllAsync` releases after a successful upload. `BatchSenderWorker` waits on that signal with the interval as a timeout, so it reacts to a new upload immediately but still falls back to its normal cadence if nothing changes.

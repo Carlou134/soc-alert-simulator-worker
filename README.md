@@ -28,7 +28,7 @@ Part of a thesis project building a SOC alert triage system with an ML prioritiz
 ## 🏗️ Architecture
 
 - Single project, folder-by-responsibility (`Models/`, `Services/`, `BackgroundServices/`, `Endpoints/`, `Middleware/`) — no Clean Architecture layers, no CQRS. Two use cases (upload a dataset, send a batch) don't justify that ceremony.
-- `WebApplication` + a `BackgroundService` share one process: a Minimal API endpoint accepts the dataset, a `PeriodicTimer`-based service samples and sends batches — added `Microsoft.AspNetCore.App` as a `FrameworkReference` to a `Sdk.Worker` project instead of running two separate apps.
+- `WebApplication` + a `BackgroundService` share one process: a Minimal API endpoint accepts the dataset, a timer-driven service samples and sends batches (woken up early by new uploads, not just on a fixed schedule) — added `Microsoft.AspNetCore.App` as a `FrameworkReference` to a `Sdk.Worker` project instead of running two separate apps.
 - No shared database with the Django backend, even though PostgreSQL on Azure will be network-reachable. Two independently deployed services writing to the same schema couples their deployments; this Worker only ever talks to Splunk.
 - Batches are sent as a single bulk NDJSON request to Splunk HEC, not one HTTP call per event.
 
