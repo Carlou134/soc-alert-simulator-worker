@@ -117,8 +117,33 @@ See `docs/architecture.md` for the responsibility of each folder. In short: `Mod
 - Any unhandled exception in the HTTP pipeline is caught by `Middleware/GlobalExceptionHandler.cs`, logged with the request path and method, and returned to the caller as `{"error": "...", "traceId": "..."}` with a `500` status — never a raw stack trace.
 - `BatchSenderWorker` catches exceptions per tick (e.g., Splunk unreachable) and logs them without stopping the timer loop.
 
+## Tests
+
+`SplunkSocWorker.Tests` (xUnit) covers the parser, the pool, the HEC client, the batch sender, and the upload endpoint:
+
+| File | Type | Covers |
+|---|---|---|
+| `AlertRecordParserTests.cs` | Unit | CSV with/without `mitre_techniques`, JSON, missing-required-column throws |
+| `AlertsDatasetPoolTests.cs` | Unit | Disk persistence, consume-not-resample, `WaitForChangeAsync` signaling |
+| `HecClientTests.cs` | Unit | NDJSON body shape, bulk endpoint URL, throws on non-success status |
+| `BatchSenderWorkerTests.cs` | Unit | `Batch:Enabled=false` never calls Splunk; empty pool never calls Splunk; a loaded pool sends and consumes |
+| `DatasetEndpointsTests.cs` | Integration (`WebApplicationFactory<Program>`) | 200 on valid upload, 400 on empty/unsupported file, 500-with-clean-JSON on a malformed CSV — the regression test for the real `HeaderValidationException` bug found earlier |
+
+Integration tests isolate `Dataset:StoragePath` to a temp file and force `Batch:Enabled=false` per test run, so they never touch a real dev's `Data/alerts_pool.json` or send anything to Splunk.
+
+**CLI / VS Code:**
+
+```bash
+dotnet test
+```
+
+**Visual Studio 2022:**
+
+1. Open `SplunkSocWorker.sln` (the test project is already part of it).
+2. `Test > Test Explorer` (or `Ctrl+E, T`) — it auto-discovers every `[Fact]`/`[Theory]` via `xunit.runner.visualstudio`, no extra setup.
+3. Run all with the ▶ button at the top of Test Explorer, or right-click a single test/class/`SplunkSocWorker.Tests` project to run or debug just that scope.
+
 ## Known limitations
 
-- No automated test project yet (no xUnit/NUnit suite). The CSV/JSON upload path has been exercised manually against a real 93-column dataset export — see the project's conversation history / commit log for that verification, not an automated regression test.
 - `DatasetEndpoints` does not enforce a maximum upload file size (Django's equivalent endpoint caps at 10 MB; this Worker has no such cap today).
 - `AlertsDatasetPool` holds a single dataset at a time — uploading a new file replaces the previous one entirely, there is no dataset history or versioning.
