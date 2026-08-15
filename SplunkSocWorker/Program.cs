@@ -58,3 +58,7 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Expone el tipo Program para que SplunkSocWorker.Tests pueda usar WebApplicationFactory<Program>
+// en los tests de integracion — necesario porque este archivo usa top-level statements.
+public partial class Program { }
