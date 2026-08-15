@@ -2,7 +2,7 @@
 
 > A .NET 8 Worker Service that simulates a SOC alert feed and streams it into Splunk Enterprise via HEC.
 
-![Alerts ingested into Splunk](docs/screnshots/splunk-data.png)
+![Alerts ingested into Splunk](docs/screenshots/splunk-data.png)
 
 ---
 
@@ -86,4 +86,6 @@ More:
 
 ## 🔗 Related links
 
-Backend / ML API (private thesis repo, not included here): `Api/soc-alert-prioritization-ml` — Django + PostgreSQL, alert prioritization model. Talks to Splunk independently; does not consume this Worker directly.
+- Backend / ML API: [soc-alert-prioritization-ml](https://github.com/Carlou134/soc-alert-prioritization-ml) — Django + PostgreSQL, alert prioritization model.
+
+- Talks to Splunk independently; does not consume this Worker directly.

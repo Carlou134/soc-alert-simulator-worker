@@ -5,7 +5,7 @@
 - .NET 8 SDK
 - A reachable Splunk Enterprise instance with the HTTP Event Collector (HEC) enabled (for the batch-sending path — the upload endpoint works without Splunk running)
 
-![console](/docs/screnshots/worker-console.png)
+![console](/docs/screenshots/worker-console.png)
 
 ## Splunk-side setup
 
