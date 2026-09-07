@@ -48,7 +48,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Build (whole solution: app + tests)
+      - name: Build (app + tests)
         run: dotnet build --configuration Release
 
       - name: Test
